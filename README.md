@@ -1,4 +1,4 @@
-# test for unity xrsdk depthTexture
+# Test demo for unity xrsdk depthTexture
     Description: this demo project base on the public unity-xr-sdk project(https://create.unity.com/vsp-signup-form)
 
 # Plugin:
@@ -14,7 +14,7 @@
            * 通过DrawColoredTriangle和DrawDepthTriangle绘制两个面片到当前屏幕上;
            * 搜索DEBUG_DEPTHTEXTURE，查看具体的调试说明;
 
-# unity project:
+# Unity project:
     Path: Samples/TestProjects/Display
     Scene: TestDepthTexture
     Description:
