@@ -1,6 +1,5 @@
 # test for unity xrsdk depthTexture
-
-# this demo project base on the public unity-xr-sdk project(https://create.unity.com/vsp-signup-form)
+    Description: this demo project base on the public unity-xr-sdk project(https://create.unity.com/vsp-signup-form)
 
 # Plugin:
     Path: Samples/Plugins/Display
@@ -16,7 +15,7 @@
            * 搜索DEBUG_DEPTHTEXTURE，查看具体的调试说明;
 
 # unity project:
-    Path: TestProjects/Display
+    Path: Samples/TestProjects/Display
     Scene: TestDepthTexture
     Description:
         1. XREntry脚本：启动XRDisplaySubsystem;
