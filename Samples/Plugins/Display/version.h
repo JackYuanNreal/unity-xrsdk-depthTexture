@@ -1,0 +1,10 @@
+#pragma once
+
+#define VERSION_MAJOR 1.0.2
+#define VERSION_BUILD "2024032820"
+#define STRINGIFY(x) #x
+#define STRINGIFYX(x) STRINGIFY(x)
+#define VERSION \
+	STRINGIFYX(VERSION_MAJOR) \
+	"." VERSION_BUILD
+

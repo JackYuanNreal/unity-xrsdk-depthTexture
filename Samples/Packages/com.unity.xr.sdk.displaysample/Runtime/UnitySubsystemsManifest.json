@@ -1,0 +1,11 @@
+{
+	"name": "XR SDK Display Sample",
+	"version": "1.0.0",
+	"libraryName": "DisplayProviderSample",
+
+	"displays": [
+		{
+			"id": "Display Sample"
+		}
+	]
+}
