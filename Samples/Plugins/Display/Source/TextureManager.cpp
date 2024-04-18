@@ -157,7 +157,7 @@ bool TextureManager::CreateDepthTexture(uint32_t texWidth, uint32_t texHeight, u
     {
         // CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8);
         // CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
-        CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+        CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
     }
     SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CreateDepthTexture: %d", (int)nativeTex);
     nativeTexOut = (uint32_t)nativeTex;
@@ -213,7 +213,7 @@ bool TextureManager::CreateUnityTextures(std::vector<uint32_t> &unityTextures, b
         {
             UnityXRRenderTextureDesc depthDesc;
             depthDesc.colorFormat = kUnityXRRenderTextureFormatRGBA32;
-            depthDesc.depthFormat = kUnityXRDepthTextureFormat16bit;
+            depthDesc.depthFormat = kUnityXRDepthTextureFormat24bitOrGreater;
             depthDesc.depth.nativePtr = (void*)(uint64_t)m_NativeDepthTextures[i];
             depthDesc.width = m_texWidth;
             depthDesc.height = m_texHeight;
