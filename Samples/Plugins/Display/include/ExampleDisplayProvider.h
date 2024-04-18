@@ -39,4 +39,6 @@ private:
 
 private:
     TextureManager* m_TexMan;
+
+    int m_FrameCnt = 0;
 };

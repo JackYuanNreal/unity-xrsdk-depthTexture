@@ -27,6 +27,7 @@ public:
     bool AcquireTexture();
     UnityXRRenderTextureId GetCurTexture();
     void DebugDraw();
+    void CaptureFrame(const char* path);
 
 private:
     bool CheckForGLError(const std::string &message);
@@ -38,6 +39,9 @@ private:
     void DestroyNativeTextures(std::vector<uint32_t> &nativeTextures);
     bool CreateUnityTextures(std::vector<uint32_t> &unityTextures, bool requestDepthTex, bool sRGB);
     void DestroyUnityTextures(std::vector<UnityXRRenderTextureId> &unityTextures);
+
+    bool SaveTextureToBMP(const char *filename, uint32_t texture, uint32_t width, uint32_t height);
+    bool SaveDataBufferToBMP(const char *filename, unsigned char *data, uint32_t width, uint32_t height);
 
     void DrawColoredTriangle(uint32_t texId);
     void DrawDepthTriangle(uint32_t texId);

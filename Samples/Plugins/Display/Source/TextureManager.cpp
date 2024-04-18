@@ -157,7 +157,7 @@ bool TextureManager::CreateDepthTexture(uint32_t texWidth, uint32_t texHeight, u
     {
         // CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8);
         // CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
-        CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+        CREATE_TEXTRUE_GL(GL_TEXTURE_2D, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
     }
     SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CreateDepthTexture: %d", (int)nativeTex);
     nativeTexOut = (uint32_t)nativeTex;
@@ -212,8 +212,8 @@ bool TextureManager::CreateUnityTextures(std::vector<uint32_t> &unityTextures, b
         if (requestDepthTex)
         {
             UnityXRRenderTextureDesc depthDesc;
-            depthDesc.colorFormat = kUnityXRRenderTextureFormatRGBA32;
-            depthDesc.depthFormat = kUnityXRDepthTextureFormat24bitOrGreater;
+            depthDesc.colorFormat = kUnityXRRenderTextureFormatNone;
+            depthDesc.depthFormat = kUnityXRDepthTextureFormat16bit;
             depthDesc.depth.nativePtr = (void*)(uint64_t)m_NativeDepthTextures[i];
             depthDesc.width = m_texWidth;
             depthDesc.height = m_texHeight;
@@ -496,3 +496,162 @@ void TextureManager::DrawColoredTriangle(uint32_t texId)
 	m_Ctx.renderAPI->DrawSimpleTriangles(worldMatrix, projectionMatrix, 2, verts, texId, true);
 }
 
+void TextureManager::CaptureFrame(const char* path)
+{
+    // path = "/storage/emulated/0/Android/data/com.nreal.NRInput/files/XrealShotsXR";
+
+    uint32_t curTexId = m_NativeTextures[m_texture_index];
+    uint32_t curDepthTexId = m_NativeDepthTextures[m_texture_index];
+
+    SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CaptureFrame: texId=%u, depthTexId=%u, %s", curTexId, curDepthTexId, path);
+
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    uint64_t timeStamp = t.tv_sec * 1000000000LL + t.tv_nsec;
+
+    std::stringstream fileTex;
+    std::stringstream fileDepthTex;
+    fileTex << path << "/" << timeStamp << ".bmp";
+    fileDepthTex << path << "/" << timeStamp << "_dep.bmp";
+
+    // As for the depth texture, draw a rectangle in a new color texture basing on the depth texture, and save it.
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    uint32_t nativeColorTex = 0;
+    CreateColorTexture(m_texWidth, m_texHeight, 0, nativeColorTex, true);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, static_cast<GLuint>(nativeColorTex), 0);
+
+    // uint32_t nativeDepthTex = 0;
+    // CreateDepthTexture(m_texWidth, m_texHeight, 0, nativeDepthTex);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, static_cast<GLuint>(nativeDepthTex), 0);
+
+    DrawColoredTriangle(curDepthTexId);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    SaveTextureToBMP(fileDepthTex.str().c_str(), nativeColorTex, m_texWidth, m_texHeight);
+
+
+    // For the color texture, just save it directly.
+    // SaveTextureToBMP(fileTex.str().c_str(), curTexId, m_texWidth, m_texHeight);
+}
+
+#pragma pack(1)
+typedef struct BITMAPFILEHEADER  
+{   
+    uint16_t bfType;   
+    uint32_t bfSize;   
+    uint16_t bfReserved1;   
+    uint16_t bfReserved2;   
+    uint32_t bfOffBits;   
+}BITMAPFILEHEADER;   
+
+typedef struct BITMAPINFOHEADER  
+{   
+    uint32_t biSize;   
+    uint32_t biWidth;   
+    uint32_t biHeight;   
+    uint16_t biPlanes;   
+    uint16_t biBitCount;   
+    uint32_t biCompression;   
+    uint32_t biSizeImage;   
+    uint32_t biXPelsPerMeter;   
+    uint32_t biYPelsPerMeter;   
+    uint32_t biClrUsed;   
+    uint32_t biClrImportant;   
+}BITMAPINFOHEADER;
+
+typedef struct tagRGBTRIPLE { 
+    uint8_t rgbtBlue; 
+    uint8_t rgbtGreen; 
+    uint8_t rgbtRed; 
+    uint8_t rgbtAlpha; 
+} RGBTRIPLE;
+#pragma pack()
+
+bool TextureManager::SaveTextureToBMP(const char *filename, uint32_t texture, uint32_t width, uint32_t height) {
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveTextureToBMP texture=%u width=%u height=%u", texture, width, height);
+
+    GLubyte* pixels = (GLubyte*) malloc(width * height * sizeof(GLubyte) * 4);
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, static_cast<GLuint>(texture), 0);    
+
+    //glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, output_image);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    CheckForGLError("ReadPixels");
+    // // glReadPixels(0, 0, width, height, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, pixels_depth);
+    // glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels_depth);
+    // CheckForGLError("ReadPixelsDepth");
+
+    unsigned char *data = reinterpret_cast<unsigned char *>(pixels);
+    SaveDataBufferToBMP(filename, data, width, height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveTextureToBMP end");
+    return true;
+}
+
+bool TextureManager::SaveDataBufferToBMP(const char *filename, unsigned char *data, uint32_t width, uint32_t height) {
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveDataBufferToBMP filename=%s", filename);
+    if (data == nullptr)
+    {
+        return false;
+    }
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveDataBufferToBMP 1");
+    // Open file first - if that fails, we can skip the remaining altogether
+    FILE* pFile = nullptr;
+    if ((pFile = fopen(filename, "wb")) == NULL)
+        return false;
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveDataBufferToBMP 2");
+    std::vector<unsigned char> fileBuffer;
+    //compose the buffer, starting with the bitmap header and infoheader
+    BITMAPFILEHEADER bmpFileHeader = // - BitmapFileHeader
+    {
+        0x4d42,
+        0, 0, 0,
+        sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER),
+    };
+    BITMAPINFOHEADER bmpInfoHeader = // - BitmapInfoHeader
+    {
+        sizeof(BITMAPINFOHEADER),
+        (decltype(bmpInfoHeader.biWidth))width, 
+        (decltype(bmpInfoHeader.biHeight))height,
+        1,32, 0,0,0,0,0,0
+    };
+    fileBuffer.resize(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + width * height * 4); // replace with size from format
+    memcpy(&fileBuffer[0], &bmpFileHeader, sizeof(bmpFileHeader));
+    memcpy(&fileBuffer[sizeof(bmpFileHeader)], &bmpInfoHeader, sizeof(bmpInfoHeader));
+    // Copying one pixel at a time to rearrange the planes from BGRA to BGRA, while the bmp store a pixel data as BGRA order
+    for (unsigned int i = 0; i < width * height; ++i)
+    {
+        // if (i==0)
+        // {
+        //    SUBSYSTEM_LOG(m_Ctx.trace, "pixel data rgba:{} {} {} {}", data[i * 4], data[i * 4 + 1], data[i * 4 + 2], data[i * 4 + 3]);
+        // }
+        fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4] = data[i * 4];
+        fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 1] = data[i * 4 + 1];
+        fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 2] = data[i * 4 + 2];
+        fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 3] = data[i * 4 + 3];
+        // fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4] = data[i * 4 + 2];
+        // fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 1] = data[i * 4 + 1];
+        // fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 2] = data[i * 4];
+        // fileBuffer[sizeof(bmpFileHeader) + sizeof(bmpInfoHeader) + i * 4 + 3] = data[i * 4 + 3];
+    }
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveDataBufferToBMP 3");
+    // Now the buffer is ready, simply write to file
+    if (fwrite(&fileBuffer[0], fileBuffer.size(), 1, pFile) < 1)
+    {
+        fclose(pFile);
+        return false;
+    }
+    fclose(pFile);
+    SUBSYSTEM_LOG(m_Ctx.trace, "SaveDataBufferToBMP end");
+    return true;
+}

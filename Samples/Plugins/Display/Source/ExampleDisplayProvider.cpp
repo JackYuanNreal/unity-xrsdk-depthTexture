@@ -53,6 +53,9 @@ UnitySubsystemErrorCode ExampleDisplayProvider::GfxThread_SubmitCurrentFrame()
     // SubmitFrame();
 
     SUBSYSTEM_LOG(m_Ctx.trace, "[ExampleDisplayProvider] GfxThread_SubmitCurrentFrame");
+    m_FrameCnt++;
+    if (m_FrameCnt == 100)
+        m_TexMan->CaptureFrame("/sdcard/Android/data/com.unityxr.Display/files/");
     return kUnitySubsystemErrorCodeSuccess;
 }
 
