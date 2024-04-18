@@ -27,6 +27,7 @@ public class UseRenderingPlugin : MonoBehaviour
     private static extern IntPtr GetRenderEventFunc();
 
 
+    private IntPtr m_RenderFunc;
     IEnumerator Start()
     {
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
@@ -36,6 +37,9 @@ public class UseRenderingPlugin : MonoBehaviour
         Camera cam = Camera.main;
         if (cam)
             cam.depthTextureMode = cam.depthTextureMode | DepthTextureMode.Depth;
+
+        m_RenderFunc = GetRenderEventFunc();
+        Debug.LogFormat("UseRenderingPlugin Start: {0}, renderFunc: {1}", gameObject.name, m_RenderFunc);
         
         yield return StartCoroutine("CallPluginAtEndOfFrames");
     }
@@ -46,9 +50,9 @@ public class UseRenderingPlugin : MonoBehaviour
     
     private void OnRenderObject()
     {
-        Debug.LogFormat("TestDepth OnRenderObject: {0}", gameObject.name);
+        // Debug.LogFormat("UseRenderingPlugin OnRenderObject: {0}, renderFunc: {1}", gameObject.name, m_RenderFunc);
 #if !UNITY_EDITOR
-        GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+        GL.IssuePluginEvent(m_RenderFunc, 1);
 #endif
     }
 
@@ -76,6 +80,9 @@ public class UseRenderingPlugin : MonoBehaviour
                 ++updateTimeCounter;
                 SetTimeFromUnity((float)updateTimeCounter * 0.016f);
             }
+            
+            if (updateTimeCounter < 20)
+                continue;
 
             // Issue a plugin event with arbitrary integer identifier.
             // The plugin can distinguish between different
@@ -83,7 +90,7 @@ public class UseRenderingPlugin : MonoBehaviour
             // On some backends the choice of eventID matters e.g on DX12 where
             // eventID == 1 means the plugin callback will be called from the render thread
             // and eventID == 2 means the callback is called from the submission thread
-            // GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+            // GL.IssuePluginEvent(m_RenderFunc, 1);
         }
     }
 }

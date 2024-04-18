@@ -211,8 +211,26 @@ bool TextureManager::CreateUnityTextures(std::vector<uint32_t> &unityTextures, b
         uDesc.color.nativePtr = (void*)(uint64_t)m_NativeTextures[i];
         if (requestDepthTex)
         {
-            uDesc.depthFormat = kUnityXRDepthTextureFormat16bit;
-            uDesc.depth.nativePtr = (void*)(uint64_t)m_NativeDepthTextures[i];
+            UnityXRRenderTextureDesc depthDesc;
+            depthDesc.colorFormat = kUnityXRRenderTextureFormatRGBA32;
+            depthDesc.depthFormat = kUnityXRDepthTextureFormat16bit;
+            depthDesc.depth.nativePtr = (void*)(uint64_t)m_NativeDepthTextures[i];
+            depthDesc.width = m_texWidth;
+            depthDesc.height = m_texHeight;
+            depthDesc.flags = 0;
+            depthDesc.textureArrayLength = 0;
+
+            UnityXRRenderTextureId depthId;
+            UnitySubsystemErrorCode retDepth = m_Ctx.display->CreateTexture(m_Handle, &depthDesc, &depthId);
+            if (retDepth != kUnitySubsystemErrorCodeSuccess)
+            {
+                SUBSYSTEM_ERROR(m_Ctx.trace, "[TextureManager] Failed to create unity texture for depth texture: %d", (int)retDepth);
+            }
+
+            SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CreateUnityTextures for depth: [%d], depthIdTex=%d, nativePtr=%llu", i, (int)depthId, (uint64_t)m_NativeDepthTextures[i]);
+
+            uDesc.depthFormat = kUnityXRDepthTextureFormatReference;
+            uDesc.depth.referenceTextureId = depthId;
         }
         else
         {
@@ -241,7 +259,7 @@ bool TextureManager::CreateUnityTextures(std::vector<uint32_t> &unityTextures, b
             return false;
         }
         unityTextures[i] = uTexId;
-        SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CreateUnityTextures: [%d], idTex=%d, nativePtr=%llu, nativePtr-dep=%llu", i, (int)uTexId, (uint64_t)uDesc.color.nativePtr, (uint64_t)uDesc.depth.nativePtr);
+        SUBSYSTEM_LOG(m_Ctx.trace, "[TextureManager] CreateUnityTextures: [%d], idTex=%d, nativePtr=%llu, nativePtr-dep=%llu, depthRefIdTex=%d", i, (int)uTexId, (uint64_t)uDesc.color.nativePtr, (uint64_t)uDesc.depth.nativePtr, (int)uDesc.depth.referenceTextureId);
     }
     // XR_TRACE_LOG(m_Ctx.trace, "[TextureManager] CreateUnityTextures end");
     return true;
