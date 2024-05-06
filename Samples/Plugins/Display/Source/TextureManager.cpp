@@ -324,20 +324,20 @@ void TextureManager::DebugDraw()
     uint32_t curTexId = m_NativeTextures[m_texture_index];
     uint32_t curDepthTexId = m_NativeDepthTextures[m_texture_index];
 
-    ///DEBUG_DEPTHTEXTURE：是否在当前framebuffer上进行绘制
+    ///DEBUG_DEPTHTEXTURE：whether to draw on current framebuffer.
     bool drawOnCurBuffer = true;
     if (drawOnCurBuffer)
     {
         glViewport(0, 0, m_texWidth, m_texHeight);
                 
-        ///DEBUG_DEPTHTEXTURE：此处通过native方式绘制一个面片，与3D场景中其他物体遮挡关系正常；
+        ///DEBUG_DEPTHTEXTURE：here we use draw a rectangle, which occulus correctly with other gameobjects in unity 3D scene.
         uint32_t colorTex = (uint32_t)(size_t)(g_TextureHandle);
         DrawColoredTriangle(colorTex);
 
-        ///DEBUG_DEPTHTEXTURE：此处调试depth texture
-        // 1. 如果使用depth texture（curDepthTexId），则为全黑
-        // 2. 如果指定为静态图g_TextureHandle，可以成功绘制，说明绘制命令没有问题
-        // 3. 如果指定为当前帧的color texture（curTexId）,可以成功绘制（效果为无限镜像），说明当前的绘制时机无问题，可以正确采样color texture，理论上来说也应该能正确采样depth texture
+        ///DEBUG_DEPTHTEXTURE：debug for depth texture
+        // 1. If we use depth texture（curDepthTexId）, then we see a black rectangle.
+        // 2. If we use g_TextureHandle，we can see it correctly. So the drawing code has no problem.
+        // 3. If we use color texture（curTexId）, we can see it correctly. As it's ok to sample color texture on this moment, it should be alse ok to sample depth texture.
         uint32_t depthTex = (uint32_t)(size_t)(curDepthTexId);
         DrawDepthTriangle(depthTex);
 
@@ -373,7 +373,6 @@ void TextureManager::DebugDraw()
 }
 
 // Draw a rectangle without depthTest && depthWrite.
-// 正交投影
 void TextureManager::DrawDepthTriangle(uint32_t texId)
 {
     // SUBSYSTEM_LOG(m_Ctx.trace, "DrawDepthTriangle");
@@ -436,7 +435,6 @@ static float* makeFrustum(float fovX, float aspectRatio, float front, float back
 }
 
 // Draw a rectangle with normal depthTest && depthWrite
-// 透视投影
 void TextureManager::DrawColoredTriangle(uint32_t texId)
 {
     // SUBSYSTEM_LOG(m_Ctx.trace, "DrawColoredTriangle");
