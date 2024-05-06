@@ -324,9 +324,6 @@ void TextureManager::DebugDraw()
     uint32_t curTexId = m_NativeTextures[m_texture_index];
     uint32_t curDepthTexId = m_NativeDepthTextures[m_texture_index];
 
-    ///DEBUG_DEPTHTEXTURE：whether to draw on current framebuffer.
-    bool drawOnCurBuffer = true;
-    if (drawOnCurBuffer)
     {
         glViewport(0, 0, m_texWidth, m_texHeight);
                 
@@ -342,33 +339,6 @@ void TextureManager::DebugDraw()
         DrawDepthTriangle(depthTex);
 
         glFinish();
-    }
-    else
-    {
-        ///DEBUG_DEPTHTEXTURE: 手动bind到新的framebuffer上，该framebuffer的attachment为我们自创建的color texture和depth texture
-        /// 这里先通过DrawColoredTriangle绘制到framebuffer上，然后再通过DrawDepthTriangle绘制深度图，发现DrawColoredTriangle成功写入了depth texture，说明depth texture自身的格式没有问题
-        GLuint fbo;
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, static_cast<GLuint>(curTexId), 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, static_cast<GLuint>(curDepthTexId), 0);
-        
-        glViewport(0, 0, m_texWidth, m_texHeight);
-        
-        glClearDepthf(1.0f);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        CheckForGLError("glClear");
-        
-        uint32_t colorTex = (uint32_t)(size_t)(g_TextureHandle);
-        DrawColoredTriangle(colorTex);
-
-        uint32_t depthTex = (uint32_t)(size_t)(curDepthTexId);
-        DrawDepthTriangle(depthTex);
-
-        glFinish();
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }
 

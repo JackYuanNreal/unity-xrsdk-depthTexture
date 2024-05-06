@@ -12,7 +12,7 @@
         5. TextureManager class：create and manager the color textures and depth textures;
         6. TextureManager.DebugDraw: debug code, you can modify the code here to verify;
            * DrawColoredTriangle and DrawDepthTriangle each draw a rectangles;
-           * search "DEBUG_DEPTHTEXTURE" in source code;
+           * search "DEBUG_DEPTHTEXTURE" in source code, to modify the code for debuging.
 
 # Unity project:
     Path: Samples/TestProjects/Display
